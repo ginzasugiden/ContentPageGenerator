@@ -397,7 +397,7 @@ const Chat = {
     container.appendChild(confirmBtn);
   },
   
-  /**
+/**
    * AI画像生成を表示
    */
   renderAIGenerate(container, step) {
@@ -440,6 +440,7 @@ const Chat = {
     generateBtn.className = 'btn btn-primary';
     generateBtn.style.marginTop = '16px';
     generateBtn.innerHTML = '<i class="fas fa-magic"></i> 画像を生成';
+    
     generateBtn.addEventListener('click', async () => {
       const prompt = document.getElementById('image-prompt').value;
       if (!this.selectedImageModel) {
@@ -451,9 +452,19 @@ const Chat = {
         return;
       }
       
-      App.showLoading('画像を生成中...', 0);
+      // 経過時間表示
+      let seconds = 0;
+      const timerInterval = setInterval(() => {
+        seconds++;
+        App.showLoading(`画像を生成中... (${seconds}秒)`, null);
+      }, 1000);
+      
+      App.showLoading('画像を生成中... (0秒)', 0);
+      
       try {
         const result = await API.image.generate(this.selectedImageModel, prompt);
+        clearInterval(timerInterval);
+        
         if (result.images) {
           this.collectedData.images = result.images;
           App.hideLoading();
@@ -461,6 +472,7 @@ const Chat = {
           this.goToStep(step.next);
         }
       } catch (error) {
+        clearInterval(timerInterval);
         App.hideLoading();
         this.showError('画像生成に失敗しました: ' + error.message);
       }
@@ -634,10 +646,18 @@ const Chat = {
    * 商品を解析
    */
   async analyzeProduct() {
-    App.showLoading('商品ページを解析中...', 30);
+    let seconds = 0;
+    const timerInterval = setInterval(() => {
+      seconds++;
+      App.showLoading(`商品ページを解析中... (${seconds}秒)`, null);
+    }, 1000);
+    
+    App.showLoading('商品ページを解析中... (0秒)', 30);
     
     try {
       const result = await API.product.analyze(this.collectedData.productUrl);
+      
+      clearInterval(timerInterval);
       
       if (result.product) {
         this.collectedData.product = result.product;
@@ -646,6 +666,7 @@ const Chat = {
         throw new Error('商品情報を取得できませんでした');
       }
     } catch (error) {
+      clearInterval(timerInterval);
       App.hideLoading();
       await this.showBotMessage('申し訳ありません。商品ページの解析に失敗しました😢\n別のURLを試すか、もう一度お試しください。');
       this.goToStep('product_url');
