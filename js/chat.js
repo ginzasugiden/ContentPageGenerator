@@ -652,24 +652,20 @@ const Chat = {
     }
   },
   
-  /**
+/**
    * コンテンツを生成
    */
   async generateContent() {
-    App.showLoading('コンテンツを生成中...', 0);
+    // 経過時間表示用
+    let seconds = 0;
+    const timerInterval = setInterval(() => {
+      seconds++;
+      App.showLoading(`コンテンツを生成中... (${seconds}秒)`, null);
+    }, 1000);
+    
+    App.showLoading('コンテンツを生成中... (0秒)', 0);
     
     try {
-      // 進捗表示
-      const stages = [
-        { text: 'ペルソナを分析中...', progress: 20 },
-        { text: 'セクション1を生成中...', progress: 35 },
-        { text: 'セクション2を生成中...', progress: 50 },
-        { text: 'セクション3を生成中...', progress: 65 },
-        { text: 'セクション4を生成中...', progress: 80 },
-        { text: '最終調整中...', progress: 95 }
-      ];
-      
-      // 実際のAPI呼び出し
       const result = await API.content.generate(
         this.collectedData.persona,
         this.collectedData.product,
@@ -680,6 +676,8 @@ const Chat = {
         }
       );
       
+      clearInterval(timerInterval);
+      
       if (result.content) {
         this.collectedData.generatedContent = result.content;
         App.hideLoading();
@@ -687,6 +685,7 @@ const Chat = {
         throw new Error('コンテンツ生成に失敗しました');
       }
     } catch (error) {
+      clearInterval(timerInterval);
       App.hideLoading();
       this.showError('コンテンツ生成に失敗しました: ' + error.message);
     }
