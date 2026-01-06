@@ -1,1 +1,264 @@
-
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コンテンツページ生成ちゃん</title>
+  <meta name="description" content="楽天市場向けコンテンツページを自動生成するツール">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- ログイン画面 -->
+    <div id="login-screen" class="screen active">
+      <div class="login-container">
+        <div class="login-header">
+          <div class="logo">
+            <span class="logo-icon">🌸</span>
+            <h1>コンテンツページ生成ちゃん</h1>
+          </div>
+          <p class="tagline">楽天市場のコンテンツページを<br>かんたん自動生成</p>
+        </div>
+        
+        <div class="login-form">
+          <div class="auth-tabs">
+            <button class="auth-tab active" data-auth="password">ID/パスワード</button>
+            <button class="auth-tab" data-auth="apikey">APIキー</button>
+          </div>
+          
+          <!-- ID/パスワード認証 -->
+          <div id="auth-password" class="auth-panel active">
+            <div class="form-group">
+              <label for="user-id">ユーザーID</label>
+              <input type="text" id="user-id" placeholder="例: tokyoflower">
+            </div>
+            <div class="form-group">
+              <label for="user-pw">パスワード</label>
+              <input type="password" id="user-pw" placeholder="パスワードを入力">
+            </div>
+          </div>
+          
+          <!-- APIキー認証 -->
+          <div id="auth-apikey" class="auth-panel">
+            <div class="form-group">
+              <label for="api-key">APIキー</label>
+              <input type="text" id="api-key" placeholder="gsd_xxxxxxxxxxxxxxxx">
+            </div>
+          </div>
+          
+          <div class="form-options">
+            <label class="checkbox-label">
+              <input type="checkbox" id="remember-me">
+              <span>ログイン状態を保持</span>
+            </label>
+          </div>
+          
+          <button id="login-btn" class="btn btn-primary btn-full">
+            <span>ログイン</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
+          
+          <div id="login-error" class="error-message"></div>
+        </div>
+        
+        <div class="login-footer">
+          <p>アカウントをお持ちでない方は<a href="#" id="register-link">こちら</a></p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- メイン画面（チャット形式） -->
+    <div id="main-screen" class="screen">
+      <header class="main-header">
+        <div class="header-left">
+          <span class="logo-icon-small">🌸</span>
+          <span class="header-title">コンテンツページ生成ちゃん</span>
+        </div>
+        <div class="header-right">
+          <div class="credits-display">
+            <i class="fas fa-coins"></i>
+            <span id="remaining-credits">--</span>回
+          </div>
+          <button id="settings-btn" class="icon-btn" title="設定">
+            <i class="fas fa-cog"></i>
+          </button>
+          <button id="logout-btn" class="icon-btn" title="ログアウト">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </header>
+      
+      <main class="chat-container">
+        <!-- 進行状況インジケーター -->
+        <div class="progress-indicator">
+          <div class="progress-step active" data-step="1">
+            <span class="step-number">1</span>
+            <span class="step-label">ペルソナ設定</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="2">
+            <span class="step-number">2</span>
+            <span class="step-label">商品入力</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="3">
+            <span class="step-number">3</span>
+            <span class="step-label">画像選択</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="4">
+            <span class="step-number">4</span>
+            <span class="step-label">生成・公開</span>
+          </div>
+        </div>
+        
+        <!-- チャットメッセージエリア -->
+        <div id="chat-messages" class="chat-messages">
+          <!-- メッセージはJSで動的に追加 -->
+        </div>
+        
+        <!-- 入力エリア -->
+        <div id="chat-input-area" class="chat-input-area">
+          <!-- 入力タイプに応じて動的に変更 -->
+        </div>
+      </main>
+    </div>
+    
+    <!-- プレビューモーダル -->
+    <div id="preview-modal" class="modal">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h2>コンテンツプレビュー</h2>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="preview-content"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="regenerate-btn">
+            <i class="fas fa-redo"></i> 再生成
+          </button>
+          <button class="btn btn-secondary" id="edit-btn">
+            <i class="fas fa-edit"></i> 編集
+          </button>
+          <button class="btn btn-primary" id="publish-btn">
+            <i class="fas fa-cloud-upload-alt"></i> 楽天に公開
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 設定モーダル -->
+    <div id="settings-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>設定</h2>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-section">
+            <h3>保存済みペルソナ</h3>
+            <div id="saved-personas-list" class="personas-list">
+              <!-- 動的に追加 -->
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>APIキー管理</h3>
+            <button class="btn btn-secondary btn-small" id="generate-apikey-btn">
+              <i class="fas fa-key"></i> 新しいAPIキーを生成
+            </button>
+            <div id="apikey-display" class="apikey-display"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ローディングオーバーレイ -->
+    <div id="loading-overlay" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p id="loading-text">処理中...</p>
+        <div class="loading-progress">
+          <div class="loading-progress-bar" id="loading-progress-bar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Templates -->
+  <template id="bot-message-template">
+    <div class="message bot-message">
+      <div class="message-avatar">🤖</div>
+      <div class="message-content">
+        <div class="message-text"></div>
+        <div class="message-actions"></div>
+      </div>
+    </div>
+  </template>
+  
+  <template id="user-message-template">
+    <div class="message user-message">
+      <div class="message-content">
+        <div class="message-text"></div>
+      </div>
+      <div class="message-avatar">👤</div>
+    </div>
+  </template>
+  
+  <template id="text-input-template">
+    <div class="input-wrapper text-input-wrapper">
+      <input type="text" class="chat-text-input" placeholder="">
+      <button class="send-btn">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </template>
+  
+  <template id="button-input-template">
+    <div class="input-wrapper button-input-wrapper">
+      <div class="button-options"></div>
+    </div>
+  </template>
+  
+  <template id="url-input-template">
+    <div class="input-wrapper url-input-wrapper">
+      <div class="url-input-group">
+        <i class="fas fa-link"></i>
+        <input type="url" class="chat-url-input" placeholder="https://item.rakuten.co.jp/...">
+      </div>
+      <button class="send-btn">
+        <i class="fas fa-search"></i> 解析
+      </button>
+    </div>
+  </template>
+  
+  <template id="image-select-template">
+    <div class="input-wrapper image-select-wrapper">
+      <div class="image-source-tabs">
+        <button class="source-tab active" data-source="product">商品画像を使用</button>
+        <button class="source-tab" data-source="generate">AIで生成</button>
+        <button class="source-tab" data-source="upload">アップロード</button>
+      </div>
+      <div class="image-source-content">
+        <!-- 動的に変更 -->
+      </div>
+    </div>
+  </template>
+  
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
