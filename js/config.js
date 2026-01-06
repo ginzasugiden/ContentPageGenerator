@@ -5,7 +5,7 @@
 
 const CONFIG = {
   // Google Apps Script WebアプリのURL（デプロイ後に設定）
-  API_BASE_URL: 'YOUR_GAS_WEB_APP_URL',
+  API_BASE_URL: 'https://script.google.com/macros/s/AKfycbxuR0q6FseR6zyvPygFVU2NX4Rm9BX-T9QOjLFZV1f7UPzDhIFjhaIJTuYsmEqLu8R-/exec',
   
   // ローカルストレージのキー
   STORAGE_KEYS: {
