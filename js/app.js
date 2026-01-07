@@ -64,9 +64,11 @@ const App = {
       });
     });
     
-    // モーダル外クリックで閉じる
+　　// モーダル外クリックで閉じる（プレビューモーダル以外）
     document.querySelectorAll('.modal').forEach(modal => {
       modal.addEventListener('click', (e) => {
+        // プレビューモーダルは外クリックで閉じない（誤クリック防止）
+        if (modal.id === 'preview-modal') return;
         if (e.target === modal) this.closeModal(modal);
       });
     });
