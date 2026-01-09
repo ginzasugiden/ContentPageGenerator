@@ -87,8 +87,9 @@ const Chat = {
         
       case 'loading':
         await this.showBotMessage(step.content);
-        await this.executeAction(step.action);
-        if (step.next) {
+        const success = await this.executeAction(step.action);
+        // アクションが成功した場合のみ次へ進む
+        if (success !== false && step.next) {
           this.goToStep(step.next);
         }
         break;
@@ -634,11 +635,12 @@ const Chat = {
   async executeAction(action) {
     switch (action) {
       case 'analyzeProduct':
-        await this.analyzeProduct();
-        break;
+        return await this.analyzeProduct();
       case 'generateContent':
         await this.generateContent();
-        break;
+        return true;
+      default:
+        return true;
     }
   },
   
