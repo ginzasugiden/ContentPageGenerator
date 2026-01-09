@@ -642,7 +642,7 @@ const Chat = {
     }
   },
   
-  /**
+/**
    * 商品を解析
    */
   async analyzeProduct() {
@@ -662,6 +662,7 @@ const Chat = {
       if (result.product) {
         this.collectedData.product = result.product;
         App.hideLoading();
+        return true;  // 成功
       } else {
         throw new Error('商品情報を取得できませんでした');
       }
@@ -670,6 +671,7 @@ const Chat = {
       App.hideLoading();
       await this.showBotMessage('申し訳ありません。商品ページの解析に失敗しました😢\n別のURLを試すか、もう一度お試しください。');
       this.goToStep('product_url');
+      return false;  // 失敗 - ここで処理を終了
     }
   },
   
