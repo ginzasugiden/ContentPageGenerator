@@ -427,6 +427,7 @@ const Chat = {
     container.appendChild(modelSelection);
     
     // プロンプト入力
+    // プロンプト入力
     const promptGroup = document.createElement('div');
     promptGroup.className = 'form-group';
     promptGroup.style.marginTop = '16px';
@@ -435,6 +436,16 @@ const Chat = {
       <input type="text" id="image-prompt" placeholder="例: 木製の手押し車、赤ちゃんが遊んでいる様子">
     `;
     container.appendChild(promptGroup);
+
+// Enterキーでの送信を防止
+const promptInput = document.getElementById('image-prompt');
+if (promptInput) {
+  promptInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();  // Enterキーでの送信を防止
+    }
+  });
+}
     
     // 生成ボタン
     const generateBtn = document.createElement('button');
