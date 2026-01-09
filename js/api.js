@@ -205,9 +205,11 @@ const API = {
     /**
      * 楽天に公開
      */
-    async publish(contentData) {
+    async publish(collectedData) {
       return await API.request('/publish', 'POST', {
-        content: contentData
+        generatedContent: collectedData.generatedContent,
+        product: collectedData.product,
+        images: collectedData.images
       });
     }
   },
