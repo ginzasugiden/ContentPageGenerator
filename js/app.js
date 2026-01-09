@@ -394,32 +394,47 @@ const App = {
    * 公開処理
    */
   async handlePublish() {
-    if (!confirm('楽天にコンテンツページを公開しますか？')) {
+    // デバッグ: データ確認
+    console.log('=== handlePublish ===');
+    console.log('Chat.collectedData:', Chat.collectedData);
+    console.log('generatedContent:', Chat.collectedData.generatedContent);
+    console.log('images:', Chat.collectedData.images);
+  
+    // generatedContentの確認
+    if (!Chat.collectedData.generatedContent) {
+      alert('コンテンツが生成されていません。先にコンテンツを生成してください。');
       return;
     }
-    
-    this.showLoading('楽天に公開中...', 50);
-    
-    try {
-      const result = await API.content.publish(Chat.collectedData);
-      
-      if (result.status === 'success') {
-        this.hideLoading();
-        this.closeModal(this.elements.previewModal);
-        
-        // 完了メッセージ
-        await Chat.showBotMessage(`🎉 コンテンツページを公開しました！\n\n📎 URL: ${result.pageUrl || ''}`);
-        
-        // 残り回数を更新
-        this.updateUserInfo();
-      } else {
-        throw new Error(result.message || '公開に失敗しました');
-      }
-    } catch (error) {
-      this.hideLoading();
-      alert('公開に失敗しました: ' + error.message);
-    }
+  
+  if (!confirm('楽天にコンテンツページを公開しますか？')) {
+    return;
   }
+  
+  this.showLoading('楽天に公開中...', 50);
+  
+  try {
+    const result = await API.content.publish(Chat.collectedData);
+    
+    console.log('Publish result:', result);
+    
+    if (result.status === 'success') {
+      this.hideLoading();
+      this.closeModal(this.elements.previewModal);
+      
+      // 完了メッセージ
+      await Chat.showBotMessage(`🎉 コンテンツページを公開しました！\n\n📎 URL: ${result.pageUrl || ''}`);
+      
+      // 残り回数を更新
+      this.updateUserInfo();
+    } else {
+      throw new Error(result.message || '公開に失敗しました');
+    }
+  } catch (error) {
+    this.hideLoading();
+    console.error('Publish error:', error);
+    alert('公開に失敗しました: ' + error.message);
+  }
+}
 };
 
 // DOMContentLoaded時に初期化
