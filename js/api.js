@@ -202,16 +202,24 @@ const API = {
       });
     },
     
-    /**
-     * 楽天に公開
-     */
-    async publish(collectedData) {
-      return await API.request('/publish', 'POST', {
-        generatedContent: collectedData.generatedContent,
-        product: collectedData.product,
-        images: collectedData.images
-      });
-    }
+/**
+ * 楽天に公開
+ */
+async publish(collectedData) {
+  // デバッグ: 送信データ確認
+  console.log('=== API.content.publish ===');
+  console.log('collectedData:', collectedData);
+  
+  const publishData = {
+    generatedContent: collectedData.generatedContent,
+    product: collectedData.product,
+    images: collectedData.images || []
+  };
+  
+  console.log('publishData:', publishData);
+  
+  return await API.request('/publish', 'POST', publishData);
+}
   },
   
   /**
