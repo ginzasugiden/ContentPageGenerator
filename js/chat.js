@@ -1075,3 +1075,17 @@ const Chat = {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 };
+
+/* キャンセルボタン */
+.loading-content .cancel-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.loading-content .cancel-btn:hover {
+  background: white;
+  border-color: var(--primary);
+  color: var(--primary);
+}
