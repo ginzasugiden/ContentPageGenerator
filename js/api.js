@@ -209,7 +209,7 @@ async publish(collectedData) {
   console.log('=== API.content.publish ===');
   console.log('collectedData:', collectedData);
   
-  // content キーでラップして送信
+  // content キーでラップして送信（重要！）
   const publishData = {
     content: {
       generatedContent: collectedData.generatedContent,
