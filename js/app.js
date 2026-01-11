@@ -222,18 +222,57 @@ const App = {
     }
   },
   
-  /**
-   * ローディング表示
-   */
-  showLoading(text = '処理中...', progress = null) {
-    document.getElementById('loading-text').textContent = text;
-    
-    if (progress !== null) {
-      document.getElementById('loading-progress-bar').style.width = `${progress}%`;
-    }
-    
-    this.elements.loadingOverlay.classList.add('active');
-  },
+/**
+ * ローディング表示（キャンセル機能付き）
+ */
+showLoading(message = '処理中...', progress = null, cancellable = true) {
+  const overlay = document.getElementById('loading-overlay');
+  const messageEl = overlay.querySelector('.loading-message');
+  const progressBar = overlay.querySelector('.loading-progress-fill');
+  
+  messageEl.textContent = message;
+  
+  if (progress !== null) {
+    progressBar.style.width = `${progress}%`;
+  }
+  
+  // キャンセルボタンを追加
+  let cancelBtn = overlay.querySelector('.cancel-btn');
+  if (cancellable && !cancelBtn) {
+    cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-btn btn btn-secondary';
+    cancelBtn.style.cssText = 'margin-top: 16px; padding: 8px 24px;';
+    cancelBtn.innerHTML = '<i class="fas fa-times"></i> キャンセル';
+    cancelBtn.addEventListener('click', () => {
+      this.cancelCurrentOperation();
+    });
+    overlay.querySelector('.loading-content').appendChild(cancelBtn);
+  } else if (!cancellable && cancelBtn) {
+    cancelBtn.remove();
+  }
+  
+  overlay.classList.add('active');
+},
+
+/**
+ * 現在の操作をキャンセル
+ */
+cancelCurrentOperation() {
+  this.isCancelled = true;
+  this.hideLoading();
+  
+  // 確認ダイアログ
+  if (confirm('処理をキャンセルしました。\n前のステップに戻りますか？')) {
+    Chat.goToPreviousStep();
+  }
+},
+
+/**
+ * キャンセルフラグをリセット
+ */
+resetCancelFlag() {
+  this.isCancelled = false;
+}
   
   /**
    * ローディング非表示
