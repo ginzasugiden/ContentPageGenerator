@@ -206,14 +206,17 @@ const API = {
  * 楽天に公開
  */
 async publish(collectedData) {
-  // デバッグ: 送信データ確認
   console.log('=== API.content.publish ===');
   console.log('collectedData:', collectedData);
   
+  // content キーでラップして送信
   const publishData = {
-    generatedContent: collectedData.generatedContent,
-    product: collectedData.product,
-    images: collectedData.images || []
+    content: {
+      generatedContent: collectedData.generatedContent,
+      product: collectedData.product,
+      images: collectedData.images || [],
+      options: collectedData.options || {}
+    }
   };
   
   console.log('publishData:', publishData);
