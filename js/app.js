@@ -272,7 +272,7 @@ cancelCurrentOperation() {
  */
 resetCancelFlag() {
   this.isCancelled = false;
-}
+},
   
   /**
    * ローディング非表示
