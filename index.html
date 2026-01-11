@@ -183,17 +183,20 @@
       </div>
     </div>
     
-    <!-- ローディングオーバーレイ -->
-    <div id="loading-overlay" class="loading-overlay">
-      <div class="loading-content">
-        <div class="loading-spinner"></div>
-        <p id="loading-text">処理中...</p>
-        <div class="loading-progress">
-          <div class="loading-progress-bar" id="loading-progress-bar"></div>
-        </div>
-      </div>
+<!-- ローディングオーバーレイ（修正版） -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loading-content">
+    <div class="loading-spinner"></div>
+    <p id="loading-text">処理中...</p>
+    <div class="loading-progress">
+      <div class="loading-progress-bar" id="loading-progress-bar"></div>
     </div>
+    <!-- 中断ボタンを追加 -->
+    <button id="cancel-process-btn" class="btn btn-danger" style="margin-top: 20px; display: none;">
+      <i class="fas fa-stop"></i> 処理を中断
+    </button>
   </div>
+</div>
   
   <!-- Templates -->
   <template id="bot-message-template">
