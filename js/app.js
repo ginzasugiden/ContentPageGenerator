@@ -234,8 +234,14 @@ showLoading(message = '処理中...', progress = null) {
     messageEl.textContent = message;
   }
   
-  if (progressBar && progress !== null) {
-    progressBar.style.width = `${progress}%`;
+  if (progressBar) {
+    if (progress !== null) {
+      progressBar.style.width = `${progress}%`;
+      progressBar.style.transition = 'width 0.3s ease';
+    } else {
+      // 進捗が指定されていない場合はアニメーション
+      progressBar.style.width = '30%';
+    }
   }
   
   if (overlay) {
