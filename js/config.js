@@ -111,14 +111,44 @@ const CONFIG = {
         { value: true, label: '含める' },
         { value: false, label: '含めない' }
       ],
-      next: 'image_source'
+      next: 'ai_select'
     },
     {
-      id: 'image_source',
+      id: 'ai_select',
       type: 'question',
-      content: '記事に使用する画像を選んでください🖼️',
-      inputType: 'image_select',
-      field: 'images',
+      content: '画像を生成するAIを選んでください🎨',
+      inputType: 'buttons',
+      field: 'imageAI',
+      options: [
+        { value: 'gemini', label: '🌟 Gemini', desc: 'Google AI' },
+        { value: 'chatgpt', label: '🤖 ChatGPT', desc: 'DALL-E 3' },
+        { value: 'midjourney', label: '🎨 Midjourney', desc: '高品質アート' },
+        { value: 'skip', label: '⏭️ スキップ', desc: '商品画像を使用' }
+      ],
+      next: 'image_prompt'
+    },
+    {
+      id: 'image_prompt',
+      type: 'question',
+      content: '画像のイメージを入力してください✨\n商品の特徴やシーンを描写してください。',
+      hint: '例：花束を持った笑顔の女性、木のおもちゃで遊ぶ赤ちゃん',
+      inputType: 'text',
+      field: 'imagePrompt',
+      next: 'image_generating'
+    },
+    {
+      id: 'image_generating',
+      type: 'loading',
+      content: '画像を生成中...（1〜2分かかります）',
+      action: 'generateImages',
+      next: 'image_confirm'
+    },
+    {
+      id: 'image_confirm',
+      type: 'question',
+      content: '画像が生成されました！🖼️\nサムネイル用の画像を1枚選択してください。\n残りの画像はコンテンツ内に挿入されます。',
+      inputType: 'image_confirm',
+      field: 'selectedImages',
       next: 'generating'
     },
     {
