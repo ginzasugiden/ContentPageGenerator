@@ -223,35 +223,24 @@ const App = {
   },
   
 /**
- * ローディング表示（キャンセル機能付き）
+ * ローディング表示
  */
-showLoading(message = '処理中...', progress = null, cancellable = true) {
-  const overlay = document.getElementById('loading-overlay');
-  const messageEl = overlay.querySelector('.loading-message');
-  const progressBar = overlay.querySelector('.loading-progress-fill');
+showLoading(message = '処理中...', progress = null) {
+  const overlay = this.elements.loadingOverlay;
+  const messageEl = document.getElementById('loading-message');
+  const progressBar = document.getElementById('loading-progress-bar');
   
-  messageEl.textContent = message;
+  if (messageEl) {
+    messageEl.textContent = message;
+  }
   
-  if (progress !== null) {
+  if (progressBar && progress !== null) {
     progressBar.style.width = `${progress}%`;
   }
   
-  // キャンセルボタンを追加
-  let cancelBtn = overlay.querySelector('.cancel-btn');
-  if (cancellable && !cancelBtn) {
-    cancelBtn = document.createElement('button');
-    cancelBtn.className = 'cancel-btn btn btn-secondary';
-    cancelBtn.style.cssText = 'margin-top: 16px; padding: 8px 24px;';
-    cancelBtn.innerHTML = '<i class="fas fa-times"></i> キャンセル';
-    cancelBtn.addEventListener('click', () => {
-      this.cancelCurrentOperation();
-    });
-    overlay.querySelector('.loading-content').appendChild(cancelBtn);
-  } else if (!cancellable && cancelBtn) {
-    cancelBtn.remove();
+  if (overlay) {
+    overlay.classList.add('active');
   }
-  
-  overlay.classList.add('active');
 },
 
 /**
