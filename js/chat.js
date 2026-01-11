@@ -87,9 +87,8 @@ const Chat = {
         
       case 'loading':
         await this.showBotMessage(step.content);
-        const success = await this.executeAction(step.action);
-        // アクションが成功した場合のみ次へ進む
-        if (success !== false && step.next) {
+        await this.executeAction(step.action);
+        if (step.next) {
           this.goToStep(step.next);
         }
         break;
@@ -191,6 +190,9 @@ const Chat = {
         break;
       case 'image_select':
         this.showImageSelect(step);
+        break;
+      case 'image_confirm':
+        this.showImageConfirm(step);
         break;
     }
   },
@@ -298,6 +300,13 @@ const Chat = {
         // 入力エリアクリア
         this.elements.inputArea.innerHTML = '';
         
+        // AI選択でスキップを選んだ場合は商品画像選択へ
+        if (field === 'imageAI' && option.value === 'skip') {
+          this.collectedData.images = this.collectedData.product?.images || [];
+          this.goToStep('image_confirm');
+          return;
+        }
+        
         // 次のステップへ
         if (nextStep) {
           this.goToStep(nextStep);
@@ -398,7 +407,256 @@ const Chat = {
     container.appendChild(confirmBtn);
   },
   
-/**
+  /**
+   * 画像確認・選択画面を表示（サムネイル選択＋差し替え機能）
+   */
+  showImageConfirm(step) {
+    const container = document.createElement('div');
+    container.className = 'image-confirm-container';
+    
+    // 画像一覧
+    const images = this.collectedData.images || [];
+    
+    if (images.length === 0) {
+      container.innerHTML = '<p style="color: var(--text-light);">画像がありません</p>';
+      this.elements.inputArea.appendChild(container);
+      return;
+    }
+    
+    // 説明
+    const desc = document.createElement('p');
+    desc.style.marginBottom = '16px';
+    desc.innerHTML = '<strong>1枚目</strong>がサムネイルになります。ドラッグで順序を変更できます。';
+    container.appendChild(desc);
+    
+    // 画像グリッド
+    const grid = document.createElement('div');
+    grid.className = 'image-grid image-confirm-grid';
+    grid.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;';
+    
+    images.forEach((imgUrl, index) => {
+      const url = typeof imgUrl === 'object' ? (imgUrl.url || imgUrl.path) : imgUrl;
+      
+      const imgWrapper = document.createElement('div');
+      imgWrapper.className = 'image-confirm-item';
+      imgWrapper.dataset.index = index;
+      imgWrapper.style.cssText = `
+        position: relative;
+        border: 3px solid ${index === 0 ? 'var(--primary)' : 'var(--border-color)'};
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      `;
+      
+      // サムネイルバッジ
+      if (index === 0) {
+        const badge = document.createElement('div');
+        badge.className = 'thumbnail-badge';
+        badge.style.cssText = `
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          background: var(--primary);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-weight: bold;
+          z-index: 2;
+        `;
+        badge.textContent = 'サムネイル';
+        imgWrapper.appendChild(badge);
+      }
+      
+      // 画像番号
+      const numBadge = document.createElement('div');
+      numBadge.style.cssText = `
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: bold;
+        z-index: 2;
+      `;
+      numBadge.textContent = index + 1;
+      imgWrapper.appendChild(numBadge);
+      
+      // 画像
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = `画像${index + 1}`;
+      img.style.cssText = 'width: 100%; height: 150px; object-fit: cover;';
+      imgWrapper.appendChild(img);
+      
+      // 差し替えボタン
+      const replaceBtn = document.createElement('button');
+      replaceBtn.className = 'replace-btn';
+      replaceBtn.style.cssText = `
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(255,255,255,0.9);
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        z-index: 2;
+      `;
+      replaceBtn.innerHTML = '<i class="fas fa-sync-alt"></i> 差替';
+      replaceBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.showImageReplaceModal(index);
+      });
+      imgWrapper.appendChild(replaceBtn);
+      
+      // クリックでサムネイルに設定
+      imgWrapper.addEventListener('click', () => {
+        this.setAsThumbnail(index);
+        this.showImageConfirm(step); // 再描画
+      });
+      
+      grid.appendChild(imgWrapper);
+    });
+    
+    container.appendChild(grid);
+    
+    // 確定ボタン
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn btn-primary';
+    confirmBtn.style.cssText = 'margin-top: 20px; width: 100%;';
+    confirmBtn.innerHTML = '<i class="fas fa-check"></i> この画像で進む';
+    confirmBtn.addEventListener('click', () => {
+      // サムネイルと他の画像を設定
+      this.collectedData.options.thumbnailImage = this.collectedData.images[0];
+      this.collectedData.options.otherImages = this.collectedData.images.slice(1);
+      
+      this.elements.inputArea.innerHTML = '';
+      this.goToStep(step.next);
+    });
+    container.appendChild(confirmBtn);
+    
+    this.elements.inputArea.innerHTML = '';
+    this.elements.inputArea.appendChild(container);
+  },
+  
+  /**
+   * サムネイルとして設定（配列の先頭に移動）
+   */
+  setAsThumbnail(index) {
+    if (index === 0) return; // 既に先頭
+    
+    const images = this.collectedData.images;
+    const selected = images.splice(index, 1)[0];
+    images.unshift(selected);
+    this.collectedData.images = images;
+  },
+  
+  /**
+   * 画像差し替えモーダルを表示
+   */
+  showImageReplaceModal(index) {
+    // モーダル作成
+    const modal = document.createElement('div');
+    modal.className = 'image-replace-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 400px;
+      width: 90%;
+    `;
+    
+    content.innerHTML = `
+      <h3 style="margin-bottom: 16px;">画像を差し替え</h3>
+      <div class="file-upload-area" style="
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 32px;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 16px;
+      ">
+        <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: var(--primary); margin-bottom: 8px;"></i>
+        <p>クリックして画像を選択</p>
+        <p style="font-size: 0.85rem; color: var(--text-light);">PNG, JPG, WEBP（最大5MB）</p>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <button class="btn btn-secondary" id="cancel-replace" style="flex: 1;">キャンセル</button>
+      </div>
+    `;
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // ファイル入力
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    content.appendChild(fileInput);
+    
+    // イベント
+    content.querySelector('.file-upload-area').addEventListener('click', () => {
+      fileInput.click();
+    });
+    
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        App.showLoading('画像をアップロード中...', 50);
+        try {
+          const base64 = await this.fileToBase64(file);
+          const result = await API.image.upload(base64, file.name);
+          
+          if (result.path) {
+            this.collectedData.images[index] = result.path;
+            App.hideLoading();
+            modal.remove();
+            // 再描画
+            const step = CONFIG.CHAT_FLOW.find(s => s.id === 'image_confirm');
+            this.showImageConfirm(step);
+          }
+        } catch (error) {
+          App.hideLoading();
+          this.showError('アップロードに失敗しました');
+        }
+      }
+    });
+    
+    content.querySelector('#cancel-replace').addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+  },
+  
+  /**
    * AI画像生成を表示
    */
   renderAIGenerate(container, step) {
@@ -427,7 +685,6 @@ const Chat = {
     container.appendChild(modelSelection);
     
     // プロンプト入力
-    // プロンプト入力
     const promptGroup = document.createElement('div');
     promptGroup.className = 'form-group';
     promptGroup.style.marginTop = '16px';
@@ -436,23 +693,12 @@ const Chat = {
       <input type="text" id="image-prompt" placeholder="例: 木製の手押し車、赤ちゃんが遊んでいる様子">
     `;
     container.appendChild(promptGroup);
-
-// Enterキーでの送信を防止
-const promptInput = document.getElementById('image-prompt');
-if (promptInput) {
-  promptInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();  // Enterキーでの送信を防止
-    }
-  });
-}
     
     // 生成ボタン
     const generateBtn = document.createElement('button');
     generateBtn.className = 'btn btn-primary';
     generateBtn.style.marginTop = '16px';
     generateBtn.innerHTML = '<i class="fas fa-magic"></i> 画像を生成';
-    
     generateBtn.addEventListener('click', async () => {
       const prompt = document.getElementById('image-prompt').value;
       if (!this.selectedImageModel) {
@@ -464,19 +710,9 @@ if (promptInput) {
         return;
       }
       
-      // 経過時間表示
-      let seconds = 0;
-      const timerInterval = setInterval(() => {
-        seconds++;
-        App.showLoading(`画像を生成中... (${seconds}秒)`, null);
-      }, 1000);
-      
-      App.showLoading('画像を生成中... (0秒)', 0);
-      
+      App.showLoading('画像を生成中...', 0);
       try {
         const result = await API.image.generate(this.selectedImageModel, prompt);
-        clearInterval(timerInterval);
-        
         if (result.images) {
           this.collectedData.images = result.images;
           App.hideLoading();
@@ -484,7 +720,6 @@ if (promptInput) {
           this.goToStep(step.next);
         }
       } catch (error) {
-        clearInterval(timerInterval);
         App.hideLoading();
         this.showError('画像生成に失敗しました: ' + error.message);
       }
@@ -610,6 +845,14 @@ if (promptInput) {
     
     const product = this.collectedData.product;
     
+    // 価格表示の作成
+    let priceDisplay = '¥---';
+    if (product.priceRange && product.priceRange.min !== product.priceRange.max) {
+      priceDisplay = `¥${product.priceRange.min?.toLocaleString()}～${product.priceRange.max?.toLocaleString()}`;
+    } else if (product.price) {
+      priceDisplay = `¥${product.price.toLocaleString()}`;
+    }
+    
     const card = document.createElement('div');
     card.className = 'product-card';
     card.innerHTML = `
@@ -617,7 +860,7 @@ if (promptInput) {
         <img src="${product.images[0] || ''}" class="product-card-image" alt="${product.name}">
         <div class="product-card-info">
           <div class="product-card-name">${product.name}</div>
-          <div class="product-card-price">¥${product.price?.toLocaleString() || '---'}</div>
+          <div class="product-card-price">${priceDisplay}</div>
           <div class="product-card-review">
             <i class="fas fa-star"></i>
             <span>${product.reviews?.average || '--'} (${product.reviews?.count || 0}件)</span>
@@ -646,62 +889,94 @@ if (promptInput) {
   async executeAction(action) {
     switch (action) {
       case 'analyzeProduct':
-        return await this.analyzeProduct();
+        await this.analyzeProduct();
+        break;
+      case 'generateImages':
+        await this.generateImages();
+        break;
       case 'generateContent':
         await this.generateContent();
-        return true;
-      default:
-        return true;
+        break;
     }
   },
   
-/**
+  /**
    * 商品を解析
    */
   async analyzeProduct() {
-    let seconds = 0;
-    const timerInterval = setInterval(() => {
-      seconds++;
-      App.showLoading(`商品ページを解析中... (${seconds}秒)`, null);
-    }, 1000);
-    
-    App.showLoading('商品ページを解析中... (0秒)', 30);
+    App.showLoading('商品ページを解析中...', 30);
     
     try {
       const result = await API.product.analyze(this.collectedData.productUrl);
       
-      clearInterval(timerInterval);
-      
       if (result.product) {
         this.collectedData.product = result.product;
         App.hideLoading();
-        return true;  // 成功
       } else {
         throw new Error('商品情報を取得できませんでした');
       }
     } catch (error) {
-      clearInterval(timerInterval);
       App.hideLoading();
       await this.showBotMessage('申し訳ありません。商品ページの解析に失敗しました😢\n別のURLを試すか、もう一度お試しください。');
       this.goToStep('product_url');
-      return false;  // 失敗 - ここで処理を終了
     }
   },
   
-/**
+  /**
+   * AI画像を生成
+   */
+  async generateImages() {
+    const aiType = this.collectedData.persona.imageAI;
+    const prompt = this.collectedData.persona.imagePrompt;
+    
+    // スキップの場合は商品画像を使用
+    if (aiType === 'skip' || !aiType) {
+      this.collectedData.images = this.collectedData.product?.images || [];
+      return;
+    }
+    
+    App.showLoading('画像を生成中...（1〜2分かかります）', 0);
+    
+    try {
+      // 商品情報を含めたプロンプトを作成
+      const productName = this.collectedData.product?.name || '';
+      const fullPrompt = prompt || productName;
+      
+      const result = await API.image.generate(aiType, fullPrompt, { count: 4 });
+      
+      if (result.images && result.images.length > 0) {
+        this.collectedData.generatedImages = result.images;
+        this.collectedData.images = result.images.map(img => img.url || img.path || img);
+        App.hideLoading();
+      } else {
+        throw new Error('画像生成に失敗しました');
+      }
+    } catch (error) {
+      App.hideLoading();
+      // エラー時は商品画像を使用
+      await this.showBotMessage('画像生成に失敗しました。商品画像を使用します。');
+      this.collectedData.images = this.collectedData.product?.images || [];
+    }
+  },
+  
+  /**
    * コンテンツを生成
    */
   async generateContent() {
-    // 経過時間表示用
-    let seconds = 0;
-    const timerInterval = setInterval(() => {
-      seconds++;
-      App.showLoading(`コンテンツを生成中... (${seconds}秒)`, null);
-    }, 1000);
-    
-    App.showLoading('コンテンツを生成中... (0秒)', 0);
+    App.showLoading('コンテンツを生成中...', 0);
     
     try {
+      // 進捗表示
+      const stages = [
+        { text: 'ペルソナを分析中...', progress: 20 },
+        { text: 'セクション1を生成中...', progress: 35 },
+        { text: 'セクション2を生成中...', progress: 50 },
+        { text: 'セクション3を生成中...', progress: 65 },
+        { text: 'セクション4を生成中...', progress: 80 },
+        { text: '最終調整中...', progress: 95 }
+      ];
+      
+      // 実際のAPI呼び出し
       const result = await API.content.generate(
         this.collectedData.persona,
         this.collectedData.product,
@@ -712,8 +987,6 @@ if (promptInput) {
         }
       );
       
-      clearInterval(timerInterval);
-      
       if (result.content) {
         this.collectedData.generatedContent = result.content;
         App.hideLoading();
@@ -721,7 +994,6 @@ if (promptInput) {
         throw new Error('コンテンツ生成に失敗しました');
       }
     } catch (error) {
-      clearInterval(timerInterval);
       App.hideLoading();
       this.showError('コンテンツ生成に失敗しました: ' + error.message);
     }
