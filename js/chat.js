@@ -1,6 +1,10 @@
 /**
  * chat.js - チャットUIモジュール
  * メッセージ表示と入力処理を管理
+ * 
+ * 修正内容:
+ * - 画像生成を4枚→2枚に変更
+ * - 1枚目をサムネイル、2枚目をコンテンツ内に配置
  */
 
 const Chat = {
@@ -14,6 +18,9 @@ const Chat = {
     images: [],
     options: {}
   },
+  
+  // 選択中の画像生成モデル
+  selectedImageModel: null,
   
   // DOM要素
   elements: {
@@ -37,6 +44,9 @@ const Chat = {
       images: [],
       options: {}
     };
+    
+    // 選択中モデルをリセット
+    this.selectedImageModel = null;
     
     // 保存済みペルソナがあればロード
     const savedPersona = Storage.get(CONFIG.STORAGE_KEYS.CURRENT_PERSONA);
@@ -409,6 +419,7 @@ const Chat = {
   
   /**
    * 画像確認・選択画面を表示（サムネイル選択＋差し替え機能）
+   * 2枚構成: 1枚目=サムネイル、2枚目=コンテンツ内画像
    */
   showImageConfirm(step) {
     const container = document.createElement('div');
@@ -423,10 +434,10 @@ const Chat = {
       return;
     }
     
-    // 説明
+    // 説明（2枚構成用）
     const desc = document.createElement('p');
     desc.style.marginBottom = '16px';
-    desc.innerHTML = '<strong>1枚目</strong>がサムネイルになります。ドラッグで順序を変更できます。';
+    desc.innerHTML = '<strong>1枚目</strong>がサムネイル、<strong>2枚目</strong>がコンテンツ内画像になります。<br>クリックで順序を変更できます。';
     container.appendChild(desc);
     
     // 画像グリッド
@@ -449,25 +460,23 @@ const Chat = {
         transition: all 0.2s ease;
       `;
       
-      // サムネイルバッジ
-      if (index === 0) {
-        const badge = document.createElement('div');
-        badge.className = 'thumbnail-badge';
-        badge.style.cssText = `
-          position: absolute;
-          top: 8px;
-          left: 8px;
-          background: var(--primary);
-          color: white;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          font-weight: bold;
-          z-index: 2;
-        `;
-        badge.textContent = 'サムネイル';
-        imgWrapper.appendChild(badge);
-      }
+      // バッジ（1枚目=サムネイル、2枚目=コンテンツ）
+      const badge = document.createElement('div');
+      badge.className = 'thumbnail-badge';
+      badge.style.cssText = `
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: ${index === 0 ? 'var(--primary)' : '#6c757d'};
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        z-index: 2;
+      `;
+      badge.textContent = index === 0 ? 'サムネイル' : 'コンテンツ';
+      imgWrapper.appendChild(badge);
       
       // 画像番号
       const numBadge = document.createElement('div');
@@ -519,7 +528,7 @@ const Chat = {
       });
       imgWrapper.appendChild(replaceBtn);
       
-      // クリックでサムネイルに設定
+      // クリックでサムネイルに設定（順序入れ替え）
       imgWrapper.addEventListener('click', () => {
         this.setAsThumbnail(index);
         this.showImageConfirm(step); // 再描画
@@ -657,7 +666,7 @@ const Chat = {
   },
   
   /**
-   * AI画像生成を表示
+   * AI画像生成を表示（2枚生成版）
    */
   renderAIGenerate(container, step) {
     const modelSelection = document.createElement('div');
@@ -694,11 +703,11 @@ const Chat = {
     `;
     container.appendChild(promptGroup);
     
-    // 生成ボタン
+    // 生成ボタン（2枚生成）
     const generateBtn = document.createElement('button');
     generateBtn.className = 'btn btn-primary';
     generateBtn.style.marginTop = '16px';
-    generateBtn.innerHTML = '<i class="fas fa-magic"></i> 画像を生成';
+    generateBtn.innerHTML = '<i class="fas fa-magic"></i> 画像を生成（2枚）';
     generateBtn.addEventListener('click', async () => {
       const prompt = document.getElementById('image-prompt').value;
       if (!this.selectedImageModel) {
@@ -710,11 +719,12 @@ const Chat = {
         return;
       }
       
-      App.showLoading('画像を生成中...', 0);
+      App.showLoading('画像を生成中...（1〜2分かかります）', 0);
       try {
-        const result = await API.image.generate(this.selectedImageModel, prompt);
+        // 2枚生成
+        const result = await API.image.generate(this.selectedImageModel, prompt, { count: 2 });
         if (result.images) {
-          this.collectedData.images = result.images;
+          this.collectedData.images = result.images.map(img => img.url || img.path || img);
           App.hideLoading();
           this.elements.inputArea.innerHTML = '';
           this.goToStep(step.next);
@@ -923,7 +933,7 @@ const Chat = {
   },
   
   /**
-   * AI画像を生成
+   * AI画像を生成（2枚版）
    */
   async generateImages() {
     const aiType = this.collectedData.persona.imageAI;
@@ -942,6 +952,7 @@ const Chat = {
       const productName = this.collectedData.product?.name || '';
       const fullPrompt = prompt || productName;
       
+      // 2枚生成
       const result = await API.image.generate(aiType, fullPrompt, { count: 2 });
       
       if (result.images && result.images.length > 0) {
