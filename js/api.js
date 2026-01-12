@@ -183,7 +183,7 @@ async request(endpoint, method = 'GET', data = null) {
       return await API.request('/image/generate', 'POST', {
         provider: provider,
         prompt: prompt,
-        count: options.count || 4,
+        count: options.count || 2,  // 4 → 2 に変更
         aspectRatio: options.aspectRatio || '3:2'
       });
     },
