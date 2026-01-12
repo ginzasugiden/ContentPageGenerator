@@ -4,39 +4,62 @@
  */
 
 const API = {
-  /**
-   * 基本のfetchラッパー
-   */
-  async request(endpoint, method = 'GET', data = null) {
-    const url = CONFIG.API_BASE_URL;
+/**
+ * 基本のfetchラッパー（HTMLレスポンス対応版）
+ */
+async request(endpoint, method = 'GET', data = null) {
+  const url = CONFIG.API_BASE_URL;
+  
+  const options = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain',
+    },
+    body: JSON.stringify({
+      endpoint: endpoint,
+      method: method,
+      data: data,
+      token: Storage.get(CONFIG.STORAGE_KEYS.AUTH_TOKEN)
+    })
+  };
+  
+  try {
+    const response = await fetch(url, options);
+    const responseText = await response.text();
     
-    const options = {
-      method: 'POST', // GASは基本的にPOSTで受ける
-      headers: {
-        'Content-Type': 'text/plain', // GASのCORS対策
-      },
-      body: JSON.stringify({
-        endpoint: endpoint,
-        method: method,
-        data: data,
-        token: Storage.get(CONFIG.STORAGE_KEYS.AUTH_TOKEN)
-      })
-    };
+    console.log('API Response for ' + endpoint + ':', responseText.substring(0, 200));
     
-    try {
-      const response = await fetch(url, options);
-      const result = await response.json();
-      
-      if (result.status === 'error') {
-        throw new Error(result.message || 'APIエラーが発生しました');
-      }
-      
-      return result;
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+    // HTMLレスポンスのチェック
+    if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html') || responseText.startsWith('<HTML')) {
+      console.error('HTMLレスポンスを受信しました');
+      throw new Error('サーバーエラー: GASが正しく応答していません。ページを再読み込みしてください。');
     }
-  },
+    
+    // 空レスポンスのチェック
+    if (!responseText || responseText.trim() === '') {
+      throw new Error('サーバーから空のレスポンスを受信しました');
+    }
+    
+    // JSONパース
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('JSONパースエラー:', parseError);
+      console.error('Response:', responseText.substring(0, 500));
+      throw new Error('サーバーレスポンスの解析に失敗しました');
+    }
+    
+    if (result.status === 'error') {
+      throw new Error(result.message || 'APIエラーが発生しました');
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+},
   
   /**
    * 認証API
