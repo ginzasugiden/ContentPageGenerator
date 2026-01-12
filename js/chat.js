@@ -942,7 +942,7 @@ const Chat = {
       const productName = this.collectedData.product?.name || '';
       const fullPrompt = prompt || productName;
       
-      const result = await API.image.generate(aiType, fullPrompt, { count: 4 });
+      const result = await API.image.generate(aiType, fullPrompt, { count: 2 });
       
       if (result.images && result.images.length > 0) {
         this.collectedData.generatedImages = result.images;
