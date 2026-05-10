@@ -116,13 +116,11 @@ const CONFIG = {
     {
       id: 'ai_select',
       type: 'question',
-      content: '画像を生成するAIを選んでください🎨',
+      content: '画像を自動生成しますか?🎨',
       inputType: 'buttons',
       field: 'imageAI',
       options: [
-        { value: 'gemini', label: '🌟 Gemini', desc: 'Google AI' },
-        { value: 'chatgpt', label: '🤖 ChatGPT', desc: 'DALL-E 3' },
-        { value: 'midjourney', label: '🎨 Midjourney', desc: '高品質アート' },
+        { value: 'gemini', label: '✨ 画像生成', desc: 'AIで画像を作る' },
         { value: 'skip', label: '⏭️ スキップ', desc: '商品画像を使用' }
       ],
       next: 'image_prompt'
